@@ -3,7 +3,7 @@ import axios from "axios";
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 import "./assets/style.css";
-import { LoginFormData, Product, ApiResponse, NewProduct } from './types';
+import { LoginFormData, Product, ApiResponse, NewProduct, Pagination } from './types';
 
 // API 基礎網址設定
 const API_BASE = import.meta.env.VITE_API_URL;
@@ -50,15 +50,21 @@ function App() {
   const [editingId, setEditingId] = useState<string>('');  // 新增：儲存正在編輯的商品 ID
   const [showDetailModal, setShowDetailModal] = useState(false);  // 新增：控制查看細節 Modal
 
+  // 新增分頁狀態
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pagination, setPagination] = useState<Pagination | null>(null);
+
   // 取得產品列表的非同步函式
-  const getData = async () => {
+  const getData = async (page = 1) => {
     try {
       const response = await axios.get<ApiResponse>(
-        `${API_BASE}/api/${API_PATH}/admin/products`
+        `${API_BASE}/api/${API_PATH}/admin/products?page=${page}`
       );
+      console.log('API 回應:', response.data); // 加入這行來檢查 API 回應
       setProducts(response.data.products || []);
+      setPagination(response.data.pagination || null);
     } catch (error) {
-      console.error('Error:', error);
+      console.error('API 錯誤:', error);
     }
   };
 
@@ -353,44 +359,37 @@ function App() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // 檢查檔案類型
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
-    if (!allowedTypes.includes(file.type)) {
-      ReactSwal.fire({
-        title: '錯誤',
-        text: '僅支援 jpg、jpeg 與 png 格式',
-        icon: 'error'
-      });
-      return;
-    }
-
-    // 檢查檔案大小（3MB = 3 * 1024 * 1024 bytes）
-    if (file.size > 3 * 1024 * 1024) {
-      ReactSwal.fire({
-        title: '錯誤',
-        text: '檔案大小不能超過 3MB',
-        icon: 'error'
-      });
-      return;
-    }
-
     try {
       const formData = new FormData();
       formData.append('file-to-upload', file);
 
+      // 確保 token 存在於 headers 中
+      const token = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("hexToken="))
+        ?.split("=")[1];
+
+      if (!token) {
+        throw new Error("No token found");
+      }
+
+      // 修正 API 路徑
       const response = await axios.post<{
         success: boolean;
         imageUrl?: string;
         message?: string;
       }>(
-        `${API_BASE}/v2/api/${API_PATH}/admin/upload`,
+        `${API_BASE}/api/${API_PATH}/admin/upload`,  // 移除 v2
         formData,
         {
           headers: {
-            'Content-Type': 'multipart/form-data'
+            'Content-Type': 'multipart/form-data',
+            'Authorization': token
           }
         }
       );
+
+      console.log('上傳回應:', response.data);  // 檢查回應
 
       if (response.data.success && response.data.imageUrl) {
         setNewProduct(prev => ({
@@ -409,21 +408,21 @@ function App() {
       }
     } catch (error) {
       console.error('Upload error:', error);
-      if (axios.isAxiosError(error) && error.response?.status === 401) {
+      if (axios.isAxiosError(error)) {
+        console.log('錯誤回應:', error.response?.data);  // 檢查錯誤回應
         ReactSwal.fire({
           title: '錯誤',
-          text: '驗證錯誤，請重新登入',
-          icon: 'error'
-        });
-        setIsAuth(false);  // 登出用戶
-      } else {
-        ReactSwal.fire({
-          title: '錯誤',
-          text: '圖片上傳失敗',
+          text: error.response?.data?.message || '圖片上傳失敗',
           icon: 'error'
         });
       }
     }
+  };
+
+  // 處理頁碼變更
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    getData(page);
   };
 
   // 渲染 UI
@@ -881,6 +880,45 @@ function App() {
                 </div>
               </div>
             </div>
+          )}
+
+          {/* 在表格下方加入分頁元件 */}
+          {pagination && (
+            <nav aria-label="Page navigation">
+              <ul className="pagination justify-content-center">
+                <li className={`page-item ${!pagination.has_pre ? 'disabled' : ''}`}>
+                  <button
+                    className="page-link"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={!pagination.has_pre}
+                  >
+                    上一頁
+                  </button>
+                </li>
+                {[...Array(pagination.total_pages)].map((_, index) => (
+                  <li 
+                    key={index} 
+                    className={`page-item ${currentPage === index + 1 ? 'active' : ''}`}
+                  >
+                    <button
+                      className="page-link"
+                      onClick={() => handlePageChange(index + 1)}
+                    >
+                      {index + 1}
+                    </button>
+                  </li>
+                ))}
+                <li className={`page-item ${!pagination.has_next ? 'disabled' : ''}`}>
+                  <button
+                    className="page-link"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={!pagination.has_next}
+                  >
+                    下一頁
+                  </button>
+                </li>
+              </ul>
+            </nav>
           )}
         </div>
       ) : (

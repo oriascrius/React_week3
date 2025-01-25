@@ -6,13 +6,7 @@ export interface ApiResponse {
   token?: string;        // JWT 認證令牌（可選）
   expired?: string;      // 令牌過期時間（可選）
   products?: Product[];  // 產品資料陣列（可選）
-  pagination?: {        // 新增分頁資訊
-    total_pages: number;
-    current_page: number;
-    has_pre: boolean;
-    has_next: boolean;
-    category?: string;
-  };
+  pagination?: Pagination;
 }
 
 // 登入表單資料介面
@@ -61,4 +55,12 @@ declare module '*.css';  // 讓 TypeScript 認識 CSS 模組
 declare interface ImportMetaEnv {
   readonly VITE_API_URL: string;   // API 基礎網址
   readonly VITE_API_PATH: string;  // API 路徑
+}
+
+export interface Pagination {
+  total_pages: number;
+  current_page: number;
+  has_pre: boolean;
+  has_next: boolean;
+  category?: string;
 } 
