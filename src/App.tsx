@@ -50,41 +50,6 @@ function App() {
   const [editingId, setEditingId] = useState<string>('');  // 新增：儲存正在編輯的商品 ID
   const [showDetailModal, setShowDetailModal] = useState(false);  // 新增：控制查看細節 Modal
 
-  // 檢查使用者登入狀態的函式
-  // 從 Cookie 中取得 token 並驗證其有效性
-  async function checkLogin() {
-    try {
-      const token = document.cookie
-        .split("; ")
-        .find((row) => row.startsWith("hexToken="))
-        ?.split("=")[1];
-
-      if (!token) {
-        throw new Error("No token found");
-      }
-
-      axios.defaults.headers.common.Authorization = token;
-      const response = await axios.post(`${API_BASE}/api/user/check`);
-      
-      if (response.data.success) {
-        ReactSwal.fire({
-          title: '登入狀態',
-          text: '目前已登入',
-          icon: 'success',
-          confirmButtonColor: '#3085d6'
-        });
-      }
-    } catch (error) {
-      ReactSwal.fire({
-        title: '登入狀態',
-        text: '目前未登入',
-        icon: 'error',
-        confirmButtonColor: '#3085d6'
-      });
-      console.error(error);
-    }
-  }
-
   // 取得產品列表的非同步函式
   const getData = async () => {
     try {
