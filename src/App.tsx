@@ -602,6 +602,7 @@ function App() {
                                 type="number"
                                 className="form-control"
                                 name="origin_price"
+                                min="0"
                                 value={newProduct.origin_price}
                                 onChange={handleProductChange}
                                 required
@@ -613,6 +614,7 @@ function App() {
                                 type="number"
                                 className="form-control"
                                 name="price"
+                                min="0"
                                 value={newProduct.price}
                                 onChange={handleProductChange}
                                 required
