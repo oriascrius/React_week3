@@ -60,7 +60,6 @@ function App() {
       const response = await axios.get<ApiResponse>(
         `${API_BASE}/api/${API_PATH}/admin/products?page=${page}`
       );
-      console.log('API 回應:', response.data); // 加入這行來檢查 API 回應
       setProducts(response.data.products || []);
       setPagination(response.data.pagination || null);
     } catch (error) {
@@ -389,8 +388,6 @@ function App() {
         }
       );
 
-      console.log('上傳回應:', response.data);  // 檢查回應
-
       if (response.data.success && response.data.imageUrl) {
         setNewProduct(prev => ({
           ...prev,
@@ -409,7 +406,6 @@ function App() {
     } catch (error) {
       console.error('Upload error:', error);
       if (axios.isAxiosError(error)) {
-        console.log('錯誤回應:', error.response?.data);  // 檢查錯誤回應
         ReactSwal.fire({
           title: '錯誤',
           text: error.response?.data?.message || '圖片上傳失敗',
